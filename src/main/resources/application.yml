@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: spring-boot-aws-localstack
+  docker:
+    compose:
+      lifecycle-management: start_only
+
+app:
+  environment: localstack #aws
+  localstack-endpoint: http://localhost:4566
+  ses:
+    source-email: sender@example.com # This email doesn't need to be real with SES_ANY_EMAIL_VERIFICATION=true
+    recipient-email: recipient@example.com # Email will appear in MailHog
+aws:
+  credentials:
+    access-key: ${YOUR_AWS_ACCESS_KEY_ID:XX}
+    secret-key: ${YOUR_AWS_SECRET_ACCESS_KEY:YY}
+  region: eu-west-1
+
+s3:
+  signing-region: eu-west-1
+  path-style-access: true
+  bucket-name: dev-my-app-2025-05-30-bucket

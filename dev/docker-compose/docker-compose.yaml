@@ -1,0 +1,45 @@
+services:
+  localstack:
+    container_name: localstack_s3
+    image: localstack/localstack:latest
+    ports:
+      - "4510-4599:4510-4599" # External port range for Localstack services
+      - "8081:8080"         # Localstack dashboard (optional)
+    environment:
+      - DEBUG=1
+      - SERVICES=s3,sqs,sns,ses,cloudwatch,iam    # Enable S3 service and the Localstack Web Application (dashboard)
+      # DEFAULT_REGION is deprecated and removed as LocalStack has full multi-region support.
+      - DOCKER_HOST=unix:///var/run/docker.sock # Required for some Localstack features
+      # DATA_DIR is deprecated; using PERSISTENCE=1 for data persistence.
+      - PERSISTENCE=1 # Enable persistence for Localstack data
+      - LOCALSTACK_TMP_DIR=/var/lib/localstack/tmp # Direct Localstack to use a temp dir within its data volume
+
+      # Allow any email address to be used as a verified sender in Localstack SES
+      - SES_ANY_EMAIL_VERIFICATION=true
+      # Configure Localstack SES to use MailHog as its SMTP endpoint
+      - AWS_ENDPOINT_URL_SES=http://localhost:4566 # This is for the SDK to talk to Localstack.
+      # SES_SMTP_SERVER below is for Localstack to forward mail.
+      - SES_SMTP_SERVER=mailhog:1025 # MailHog's SMTP port
+      - SES_SMTP_USER=test # Dummy credentials for MailHog if needed
+      - SES_SMTP_PASS=test
+    volumes:
+      # Use a named volume or a specific path within your project for persistent data
+      # This helps avoid conflicts with system /tmp directories
+      - "./.localstack-data:/var/lib/localstack" # Mount a volume for persistent data
+      - "/var/run/docker.sock:/var/run/docker.sock" # Mount Docker socket for Localstack to interact with Docker
+    networks:
+      - app-network
+
+
+  smtp:
+    container_name: mailhog
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025" # MailHog Web UI
+      - "1025:1025" # MailHog SMTP server
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
