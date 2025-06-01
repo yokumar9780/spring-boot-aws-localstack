@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
@@ -55,6 +55,18 @@ jobs:
             sleep 5
           done
           echo "LocalStack did not become ready in time" && exit 1
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update && sudo apt-get install -y awscli
+      - name: Configure AWS CLI credentials
+        run: |
+          mkdir -p ~/.aws
+          echo "[default]" > ~/.aws/credentials
+          echo "aws_access_key_id = DUMMY" >> ~/.aws/credentials
+          echo "aws_secret_access_key = DUMMY" >> ~/.aws/credentials
+          echo "[default]" > ~/.aws/config
+          echo "region = eu-west-1" >> ~/.aws/config
 
       - name: Install Terraform
         run: |
@@ -106,4 +118,3 @@ jobs:
       - name: Stop Docker Compose
         if: always()
         run: docker compose -f dev/docker-compose/docker-compose.yaml down
-
