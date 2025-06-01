@@ -1,0 +1,176 @@
+{
+	"info": {
+		"_postman_id": "b151e29b-d8c2-44d8-bf60-e804f0db7eb5",
+		"name": "localstack-spring-boot",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12166289",
+		"_collection_link": "https://speeding-firefly-565395-1.postman.co/workspace/Lokate-Workspace~84a1e7a5-cc2d-481d-885b-ecb44ef6330e/collection/12166289-b151e29b-d8c2-44d8-bf60-e804f0db7eb5?action=share&source=collection_link&creator=12166289"
+	},
+	"item": [
+		{
+			"name": "s3",
+			"item": [
+				{
+					"name": "list-s3-files-name",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": " {\r\n        \"name\": \"Scenario 1\",\r\n        \"trailerMovements\": [\r\n            {\r\n                \"startLocationName\": \"Gothenburg\",\r\n                \"endLocationName\": \"Lindesberg\",\r\n                \"intermediateLocationNames\": \"Mariestad\",\r\n                \"numTrailers\": 6\r\n            },\r\n            {\r\n                \"startLocationName\": \"Lindesberg\",\r\n                \"endLocationName\": \"Gothenburg\",\r\n                \"intermediateLocationNames\": \"Mariestad\",\r\n                \"numTrailers\": 6\r\n            }\r\n        ]\r\n    }"
+						},
+						"url": {
+							"raw": "http://localhost:8080/s3/list",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"s3",
+								"list"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "upload",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/C:/Users/a316916/Downloads/DataTableReport (4).xlsx"
+								}
+							]
+						},
+						"url": {
+							"raw": "http://localhost:8080/s3/upload",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"s3",
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-file",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/s3/download/1748583943986_DataTableReport (4).xlsx",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"s3",
+								"download",
+								"1748583943986_DataTableReport (4).xlsx"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete-file",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/s3/delete/1748597475051_DataTableReport (4).xlsx",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"s3",
+								"delete",
+								"1748597475051_DataTableReport (4).xlsx"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "sns",
+			"item": [
+				{
+					"name": "process-sns-msg",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/process",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"process"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "list-sns-msg",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/list",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"list"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
