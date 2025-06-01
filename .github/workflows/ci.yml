@@ -34,21 +34,34 @@ jobs:
           docker compose -f dev/docker-compose/docker-compose.yaml ps
       - name: Debug LocalStack health endpoint
         run: |
-          for i in {1..30}; do
+          for i in {1..10}; do
             echo "--- Health check attempt $i ---"
             curl -s http://localhost:4566/_localstack/health || true
             sleep 5
           done
       - name: Wait for LocalStack to be ready
         run: |
-          for i in {1..36}; do
-            if curl -s http://localhost:4566/_localstack/health | grep '"s3": *"running"'; then
+          for i in {1..26}; do
+            if curl -s http://localhost:4566/_localstack/health | grep '"s3": *"available"'; then
               echo "LocalStack S3 is ready" && exit 0
             fi
             echo "Waiting for LocalStack S3..."
             sleep 5
           done
           echo "LocalStack did not become ready in time" && exit 1
+      - name: Install Terraform
+        run: |
+          sudo apt-get update && sudo apt-get install -y wget unzip
+          wget https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip
+          unzip terraform_1.8.5_linux_amd64.zip
+          sudo mv terraform /usr/local/bin/
+          terraform -version
+      - name: Terraform Init
+        working-directory: dev/terraform/environments/localstack
+        run: terraform init
+      - name: Terraform Apply (LocalStack)
+        working-directory: dev/terraform/environments/localstack
+        run: terraform apply -auto-approve -var 'aws_endpoint_url=http://localhost:4566'
       - name: Build Spring Boot app
         run: ./mvnw clean package -DskipTests
       - name: Start Spring Boot app
@@ -76,3 +89,4 @@ jobs:
       - name: Stop Docker Compose
         if: always()
         run: docker compose -f dev/docker-compose/docker-compose.yaml down
+
