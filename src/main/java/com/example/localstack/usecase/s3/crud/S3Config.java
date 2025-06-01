@@ -8,9 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -40,9 +38,6 @@ public class S3Config {
      */
     @Bean
     public S3Client s3Client() {
-        AwsProperties.Credentials credentials = awsProperties.credentials();
-        AwsBasicCredentials awsBasicCredentials = AwsBasicCredentials.create(credentials.accessKey(),
-                credentials.secretKey());
         if ("localstack".equalsIgnoreCase(appProperties.environment())) {
             // Configure for Localstack
             log.info("Configuring S3 client for Localstack at: {}", appProperties.localstackEndpoint());

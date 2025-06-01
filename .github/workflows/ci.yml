@@ -1,0 +1,75 @@
+name: Deploy with Terraform & localstack
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Set up Maven
+        run: sudo apt-get install -y maven
+      - name: Install Docker and Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io docker-compose
+      - name: Start Docker Compose
+        run: docker-compose -f dev/docker-compose/docker-compose.yaml up -d
+      - name: Verify Docker Compose is running
+        run: |
+          docker ps
+          docker-compose -f dev/docker-compose/docker-compose.yaml ps
+      - name: Wait for LocalStack to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8081/health | grep 'running'; then
+              echo "LocalStack is ready" && exit 0
+            fi
+            echo "Waiting for LocalStack..."
+            sleep 5
+          done
+          echo "LocalStack did not become ready in time" && exit 1
+      - name: Build Spring Boot app
+        run: ./mvnw clean package -DskipTests
+      - name: Start Spring Boot app
+        run: java -jar target/*.jar &
+      - name: Wait for Spring Boot app
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/actuator/health | grep 'UP'; then
+              echo "Spring Boot app is ready" && exit 0
+            fi
+            echo "Waiting for Spring Boot app..."
+            sleep 5
+          done
+          echo "Spring Boot app did not become ready in time" && exit 1
+      - name: Test S3Controller endpoints
+        run: |
+          # Upload a file
+          curl -F "file=@README.md" http://localhost:8080/s3/upload
+          # List files
+          curl http://localhost:8080/s3/list
+          # Download the file
+          curl -O http://localhost:8080/s3/download/README.md
+          # Delete the file
+          curl -X DELETE http://localhost:8080/s3/delete/README.md
+      - name: Stop Docker Compose
+        if: always()
+        run: docker-compose -f dev/docker-compose/docker-compose.yaml down
