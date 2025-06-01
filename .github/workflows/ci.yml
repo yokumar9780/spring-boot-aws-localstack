@@ -32,9 +32,16 @@ jobs:
         run: |
           docker ps
           docker compose -f dev/docker-compose/docker-compose.yaml ps
-      - name: Wait for LocalStack to be ready
+      - name: Debug LocalStack health endpoint
         run: |
           for i in {1..30}; do
+            echo "--- Health check attempt $i ---"
+            curl -s http://localhost:4566/_localstack/health || true
+            sleep 5
+          done
+      - name: Wait for LocalStack to be ready
+        run: |
+          for i in {1..36}; do
             if curl -s http://localhost:4566/_localstack/health | grep '"s3": *"running"'; then
               echo "LocalStack S3 is ready" && exit 0
             fi

@@ -18,7 +18,7 @@ This project demonstrates how to use Spring Boot with AWS services (S3, SNS, SQS
 
 From the project root, run:
 
-```powershell
+```bash
 cd dev/docker-compose
 # Start LocalStack and MailHog
 # (use 'docker compose' if 'docker-compose' is not available)
@@ -29,7 +29,7 @@ This starts LocalStack and MailHog in the background.
 
 Check LocalStack health:
 
-```powershell
+```bash
 curl http://localhost:4566/_localstack/health
 ```
 
@@ -43,14 +43,14 @@ All Terraform files are under `dev/terraform/`.
 
 ### Initialize Terraform
 
-```powershell
+```bash
 cd ../terraform/environments/localstack
 terraform init
 ```
 
 ### Apply for LocalStack
 
-```powershell
+```bash
 terraform apply -var="environment=localstack" --auto-approve
 ```
 
@@ -58,7 +58,7 @@ terraform apply -var="environment=localstack" --auto-approve
 
 > **Note:** For AWS, ensure your AWS credentials are configured (via `aws configure` or environment variables).
 
-```powershell
+```bash
 cd ../aws
 terraform init
 terraform apply -var="environment=aws" --auto-approve
@@ -70,13 +70,13 @@ terraform apply -var="environment=aws" --auto-approve
 
 ### Create a bucket
 
-```powershell
+```bash
 aws --endpoint-url=http://localhost:4566 s3 mb s3://test-bucket
 ```
 
 ### List buckets
 
-```powershell
+```bash
 aws --endpoint-url=http://localhost:4566 s3 ls
 ```
 
@@ -86,14 +86,14 @@ aws --endpoint-url=http://localhost:4566 s3 ls
 
 ### AWS CLI (real AWS)
 
-```powershell
+```bash
 aws ses verify-email-identity --email-address your.email@example.com --region eu-west-1
 aws sns publish --topic-arn arn:aws:sns:eu-west-1:YOUR_AWS_ACCOUNT_ID:notifications_topic_sns --message "hello world" --subject "hello"
 ```
 
 ### LocalStack CLI
 
-```powershell
+```bash
 aws --endpoint-url=http://localhost:4566 ses verify-email-identity --email-address your.email@example.com --region eu-west-1
 aws --endpoint-url=http://localhost:4566 sns publish --topic-arn arn:aws:sns:eu-west-1:000000000000:notifications_topic_sns --message "hello world" --subject "hello"
 ```
@@ -104,7 +104,7 @@ aws --endpoint-url=http://localhost:4566 sns publish --topic-arn arn:aws:sns:eu-
 
 Build and run the app from the project root:
 
-```powershell
+```bash
 mvn clean install
 mvn spring-boot:run
 ```
@@ -136,7 +136,7 @@ The app will start on [http://localhost:8080](http://localhost:8080).
 
 - **Stop LocalStack and MailHog:**
 
-  ```powershell
+  ```bash
   cd dev/docker-compose
   docker-compose down
   ```
@@ -145,13 +145,13 @@ The app will start on [http://localhost:8080](http://localhost:8080).
 
   - For LocalStack:
 
-    ```powershell
+    ```bash
     cd ../terraform/environments/localstack
     terraform destroy -var="environment=localstack" --auto-approve
     ```
 
   - For AWS:
-    ```powershell
+    ```bash
     cd ../terraform/environments/aws
     terraform destroy -var="environment=aws" --auto-approve
     ```
