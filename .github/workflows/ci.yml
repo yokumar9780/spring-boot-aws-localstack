@@ -27,11 +27,11 @@ jobs:
       - name: Set up Maven
         run: sudo apt-get install -y maven
       - name: Start Docker Compose
-        run: docker-compose -f dev/docker-compose/docker-compose.yaml up -d
+        run: docker compose -f dev/docker-compose/docker-compose.yaml up -d
       - name: Verify Docker Compose is running
         run: |
           docker ps
-          docker-compose -f dev/docker-compose/docker-compose.yaml ps
+          docker compose -f dev/docker-compose/docker-compose.yaml ps
       - name: Wait for LocalStack to be ready
         run: |
           for i in {1..30}; do
@@ -68,4 +68,4 @@ jobs:
           curl -X DELETE http://localhost:8080/s3/delete/README.md
       - name: Stop Docker Compose
         if: always()
-        run: docker-compose -f dev/docker-compose/docker-compose.yaml down
+        run: docker compose -f dev/docker-compose/docker-compose.yaml down
