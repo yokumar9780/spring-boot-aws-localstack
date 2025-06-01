@@ -19,20 +19,68 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
+
       - name: Set up Maven
         run: sudo apt-get install -y maven
 
+      - name: Start Docker Compose
+        run: docker compose -f dev/docker-compose/docker-compose.yaml up -d
+
+      - name: Verify Docker Compose is running
+        run: |
+          docker ps
+          docker compose -f dev/docker-compose/docker-compose.yaml ps
+
+      - name: Debug LocalStack health endpoint
+        run: |
+          for i in {1..2}; do
+            echo "--- Health check attempt $i ---"
+            curl -s http://localhost:4566/_localstack/health || true
+            sleep 5
+          done
+
+      - name: Wait for LocalStack to be ready
+        run: |
+          for i in {1..5}; do
+            if curl -s http://localhost:4566/_localstack/health | grep '"s3": *"available"'; then
+              echo "LocalStack S3 is ready" && exit 0
+            fi
+            echo "Waiting for LocalStack S3..."
+            sleep 5
+          done
+          echo "LocalStack did not become ready in time" && exit 1
+
+      - name: Install Terraform
+        run: |
+          sudo apt-get update && sudo apt-get install -y wget unzip
+          wget https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip
+          unzip terraform_1.8.5_linux_amd64.zip
+          sudo mv terraform /usr/local/bin/
+          terraform -version
+
+      - name: Terraform Init
+        working-directory: dev/terraform/environments/localstack
+        run: terraform init
+
+      - name: Terraform Apply (LocalStack)
+        working-directory: dev/terraform/environments/localstack
+        run: terraform apply -auto-approve
+
       - name: Make Maven Wrapper Executable
         run: chmod +x ./mvnw
+
       - name: Build Spring Boot app
         run: ./mvnw clean package -DskipTests
+
       - name: Start Spring Boot app
         run: java -jar target/*.jar &
+
       - name: Wait for Spring Boot app
         run: |
           for i in {1..15}; do
@@ -43,6 +91,7 @@ jobs:
             sleep 5
           done
           echo "Spring Boot app did not become ready in time" && exit 1
+
       - name: Test S3Controller endpoints
         run: |
           # Upload a file
@@ -54,43 +103,6 @@ jobs:
           # Delete the file
           curl -X DELETE http://localhost:8080/s3/delete/README.md
 
-
-      - name: Start Docker Compose
-        run: docker compose -f dev/docker-compose/docker-compose.yaml up -d
-      - name: Verify Docker Compose is running
-        run: |
-          docker ps
-          docker compose -f dev/docker-compose/docker-compose.yaml ps
-      - name: Debug LocalStack health endpoint
-        run: |
-          for i in {1..2}; do
-            echo "--- Health check attempt $i ---"
-            curl -s http://localhost:4566/_localstack/health || true
-            sleep 5
-          done
-      - name: Wait for LocalStack to be ready
-        run: |
-          for i in {1..5}; do
-            if curl -s http://localhost:4566/_localstack/health | grep '"s3": *"available"'; then
-              echo "LocalStack S3 is ready" && exit 0
-            fi
-            echo "Waiting for LocalStack S3..."
-            sleep 5
-          done
-          echo "LocalStack did not become ready in time" && exit 1
-      - name: Install Terraform
-        run: |
-          sudo apt-get update && sudo apt-get install -y wget unzip
-          wget https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip
-          unzip terraform_1.8.5_linux_amd64.zip
-          sudo mv terraform /usr/local/bin/
-          terraform -version
-      - name: Terraform Init
-        working-directory: dev/terraform/environments/localstack
-        run: terraform init
-      - name: Terraform Apply (LocalStack)
-        working-directory: dev/terraform/environments/localstack
-        run: terraform apply -auto-approve
       - name: Stop Docker Compose
         if: always()
         run: docker compose -f dev/docker-compose/docker-compose.yaml down
