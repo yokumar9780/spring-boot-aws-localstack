@@ -1,160 +1,144 @@
-# Spring Boot AWS LocalStack Example
+# Spring Boot AWS LocalStack Demo
 
-This project demonstrates how to use Spring Boot with AWS services (S3, SNS, SQS, SES) locally using [LocalStack](https://github.com/localstack/localstack) and also supports real AWS deployments via Terraform.
-
----
-
-## Prerequisites
-
-- [Docker](https://www.docker.com/products/docker-desktop)
-- [AWS CLI](https://aws.amazon.com/cli/) (for AWS and LocalStack CLI commands)
-- [Terraform](https://www.terraform.io/downloads)
-- [Java 21](https://openjdk.org/)
-- [Maven](https://maven.apache.org/download.cgi)
+This project demonstrates how to use Spring Boot with AWS services (S3, SQS, SNS, SES) locally using LocalStack, Terraform, and Docker Compose. It includes a REST API for S3 file operations and a notification system using SQS/SNS/SES, all fully automated with CI/CD via GitHub Actions (`ci.yml`).
 
 ---
 
-## 1. Start LocalStack and MailHog (SMTP)
+## Features
 
-From the project root, run:
+- **S3 File Operations**: Upload, download, list, and delete files via REST endpoints.
+- **Notification System**: Process, list, and purge SQS/SNS/SES notifications.
+- **LocalStack Integration**: All AWS resources are emulated locally.
+- **Terraform Infrastructure**: S3 buckets, SQS queues, and SNS topics are provisioned via Terraform.
+- **MailHog Integration**: SES emails are viewable in MailHog.
+- **CI/CD**: Automated build, infrastructure provisioning, and endpoint testing via GitHub Actions (`ci.yml`).
 
-```bash
-cd dev/docker-compose
-# Start LocalStack and MailHog
-# (use 'docker compose' if 'docker-compose' is not available)
-docker-compose up -d
+---
+
+## Project Structure
+
+```
+- dev/
+  - docker-compose/docker-compose.yaml   # LocalStack & MailHog setup
+  - terraform/                           # Terraform modules & environments
+  - postman/                              # Postman colletion
+- src/
+  - main/java/com/example/localstack/    # Spring Boot source code
+  - main/resources/application.yml       # App configuration
+- .github/workflows/ci.yml               # CI/CD pipeline
 ```
 
-This starts LocalStack and MailHog in the background.
-
-Check LocalStack health:
-
-```bash
-curl http://localhost:4566/_localstack/health
-```
-
-MailHog UI is available at: [http://localhost:8025](http://localhost:8025)
-
 ---
 
-## 2. Provision AWS Resources with Terraform
+## Quick Start
 
-All Terraform files are under `dev/terraform/`.
+### 1. Prerequisites
 
-### Initialize Terraform
+- Docker & Docker Compose
+- Java 21
+- Maven
+- Terraform (automatically installed in CI)
 
-```bash
-cd ../terraform/environments/localstack
+### 2. Start LocalStack & MailHog
+
+```sh
+docker compose -f dev/docker-compose/docker-compose.yaml up -d
+```
+
+- LocalStack dashboard: http://localhost:8081
+- MailHog UI: http://localhost:8025
+
+### 3. Provision AWS Resources (LocalStack)
+
+```sh
+cd dev/terraform/environments/localstack
 terraform init
+terraform apply -auto-approve
 ```
 
-### Apply for LocalStack
+### 4. Build & Run Spring Boot App
 
-```bash
-terraform apply -var="environment=localstack" --auto-approve
+```sh
+chmod +x ./mvnw
+./mvnw clean package -DskipTests
+java -jar target/*.jar
 ```
 
-### Apply for AWS
+- App will be available at: http://localhost:8080
 
-> **Note:** For AWS, ensure your AWS credentials are configured (via `aws configure` or environment variables).
+### 5. Test S3 Endpoints
 
-```bash
-cd ../aws
-terraform init
-terraform apply -var="environment=aws" --auto-approve
+```sh
+# Upload a file
+curl -F "file=@README.md" http://localhost:8080/s3/upload
+# List files
+curl http://localhost:8080/s3/list
+# Download a file
+curl -O http://localhost:8080/s3/download/<FILENAME>
+# Delete a file
+curl -X DELETE http://localhost:8080/s3/delete/<FILENAME>
 ```
 
----
+### 6. Test Notification Endpoints
 
-## 3. S3 Endpoints (LocalStack)
-
-### Create a bucket
-
-```bash
-aws --endpoint-url=http://localhost:4566 s3 mb s3://test-bucket
-```
-
-### List buckets
-
-```bash
-aws --endpoint-url=http://localhost:4566 s3 ls
-```
-
----
-
-## 4. SNS/SES Commands
-
-### AWS CLI (real AWS)
-
-```bash
-aws ses verify-email-identity --email-address your.email@example.com --region eu-west-1
-aws sns publish --topic-arn arn:aws:sns:eu-west-1:YOUR_AWS_ACCOUNT_ID:notifications_topic_sns --message "hello world" --subject "hello"
-```
-
-### LocalStack CLI
-
-```bash
-aws --endpoint-url=http://localhost:4566 ses verify-email-identity --email-address your.email@example.com --region eu-west-1
-aws --endpoint-url=http://localhost:4566 sns publish --topic-arn arn:aws:sns:eu-west-1:000000000000:notifications_topic_sns --message "hello world" --subject "hello"
+```sh
+curl http://localhost:8080/process
+curl http://localhost:8080/list
+curl http://localhost:8080/purge
 ```
 
 ---
 
-## 5. Running the Spring Boot Application
+## CI/CD Pipeline (`.github/workflows/ci.yml`)
 
-Build and run the app from the project root:
-
-```bash
-mvn clean install
-mvn spring-boot:run
-```
-
-The app will start on [http://localhost:8080](http://localhost:8080).
-
----
-
-## 6. Example API Endpoints
-
-- **Upload File:**  
-  `curl -X POST -F "file=@/path/to/your/local/file.txt" http://localhost:8080/s3/upload`
-
-- **List Files:**  
-  `curl http://localhost:8080/s3/list`
-
-- **Download File:**  
-  `curl -O http://localhost:8080/s3/download/YOUR_UPLOADED_FILE_NAME.txt`
-
-- **Delete File:**  
-  `curl -X DELETE http://localhost:8080/s3/delete/YOUR_UPLOADED_FILE_NAME.txt`
+- Runs on every push, PR, or schedule.
+- Steps:
+  1. Checks out code, sets up Java & Maven.
+  2. Starts LocalStack & MailHog with Docker Compose.
+  3. Installs AWS CLI and Terraform, configures dummy AWS credentials.
+  4. Provisions AWS resources in LocalStack using Terraform.
+  5. Builds and starts the Spring Boot app.
+  6. Waits for app readiness, then tests all S3 endpoints with `curl`.
+  7. Shuts down Docker Compose.
+- Ensures all infrastructure and endpoints work as expected in a local AWS-like environment.
 
 ---
 
-## 7. Clean Up
+## Troubleshooting
 
-- **Stop Spring Boot App:**  
-  Press `Ctrl+C` in the terminal.
+- If LocalStack or MailHog fail to start, try:
+  ```sh
+  docker compose -f dev/docker-compose/docker-compose.yaml down --volumes --remove-orphans
+  docker volume prune -f
+  ```
+- For persistent issues, see the [setup-instructions.md](setup-instructions.md) for detailed troubleshooting.
 
-- **Stop LocalStack and MailHog:**
+---
 
-  ```bash
-  cd dev/docker-compose
-  docker-compose down
+## Clean Up
+
+- Stop the app: `Ctrl+C` in the terminal.
+- Stop LocalStack & MailHog:
+  ```sh
+  docker compose -f dev/docker-compose/docker-compose.yaml down
+  ```
+- Destroy resources:
+  ```sh
+  cd dev/terraform/environments/localstack
+  terraform destroy -auto-approve
   ```
 
-- **Destroy Terraform Resources:**
+---
 
-  - For LocalStack:
+## References
 
-    ```bash
-    cd ../terraform/environments/localstack
-    terraform destroy -var="environment=localstack" --auto-approve
-    ```
-
-  - For AWS:
-    ```bash
-    cd ../terraform/environments/aws
-    terraform destroy -var="environment=aws" --auto-approve
-    ```
+- [LocalStack Docs](https://docs.localstack.cloud/)
+- [MailHog](https://github.com/mailhog/MailHog)
+- [Spring Boot](https://spring.io/projects/spring-boot)
+- [Terraform](https://www.terraform.io/)
 
 ---
 
+## License
+
+MIT
