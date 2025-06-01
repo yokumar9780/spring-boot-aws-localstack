@@ -26,10 +26,6 @@ jobs:
           java-version: '21'
       - name: Set up Maven
         run: sudo apt-get install -y maven
-      - name: Install Docker and Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io docker-compose
       - name: Start Docker Compose
         run: docker-compose -f dev/docker-compose/docker-compose.yaml up -d
       - name: Verify Docker Compose is running
